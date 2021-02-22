@@ -5,20 +5,49 @@
 #ifndef OPENCVMEANBRIGHTNESSTEST_HELPERFUNCTIONS_H
 #define OPENCVMEANBRIGHTNESSTEST_HELPERFUNCTIONS_H
 
+
+
 #include <cstdio>
+#include <chrono>
 
-void DefineRegionOfInterest() {
+void SaveImage(cv::Mat& img, cv::ColorConversionCodes color_space, int channel, const std::vector<int>& roi_arguments, const std::string& image_name, bool show_image) {
+    if (img.empty()) {
+        std::cout << "SaveImage(): Image not found!" << std::endl;
+        return;
+    }
 
-}
+    cv::Mat image;
+    img.copyTo(image);
 
-void SaveImage(cv::Mat& image, const std::string& image_name, bool show_image) {
+    if (cv::COLOR_RGB2RGBA == color_space) {
+        cv::Mat tmp_image;
+        image.copyTo(tmp_image);
+        cv::cvtColor(tmp_image, tmp_image, cv::COLOR_RGB2GRAY);
+        cv::cvtColor(tmp_image, image, cv::COLOR_GRAY2RGB);
+    } else {
+        std::vector<cv::Mat> channels;
+        split(image, channels);
+        cv::cvtColor(channels[channel], image, cv::COLOR_GRAY2RGB);
+    }
+    // ROI arguments
+    int width = roi_arguments.at(0);
+    int height = roi_arguments.at(1);
+    int x0 = roi_arguments.at(2);
+    int y0 = roi_arguments.at(3);
+
+    // Top left corner
+    cv::Point pt1(x0, y0);
+    // Bottom right corner
+    cv::Point pt2(x0 + width, y0 + height);
+
+    cv::rectangle(image, pt1, pt2, cv::Scalar(0, 0, 255));
 
     std::string file_name = image_name + ".jpg";
-    if (!cv::imread(file_name, cv::IMREAD_ANYCOLOR).empty()) {
+    if (!cv::imread(file_name, cv::IMREAD_UNCHANGED).empty()) {
         std::remove(file_name.c_str());
     }
-    cv::imwrite("images/" + image_name + ".jpg", image);
 
+    cv::imwrite("images/dump/" + image_name + ".jpg", image);
     if (show_image) {
         if (image.empty()) {
             std::cerr << "SaveImage: Image not found!" << std::endl;
@@ -29,13 +58,17 @@ void SaveImage(cv::Mat& image, const std::string& image_name, bool show_image) {
     }
 }
 
-void SaveHistogram(cv::Mat& image, cv::ColorConversionCodes color_space, int channel, const std::string& image_name, bool show_histogram) {
-    if (image.empty()) {
+void SaveHistogram(cv::Mat& img, cv::ColorConversionCodes color_space, int channel, const std::string& image_name, bool show_histogram) {
+    if (img.empty()) {
         std::cerr << "SaveHistogram(): Image not found!" << std::endl;
         return;
     }
 
+    cv::Mat image;
+    img.copyTo(image);
+
     std::vector<cv::Mat> channels;
+    int rgb_channels[] = {0, 1, 2};
     split(image, channels);
     int hist_size = 256;
     float range[] = {0, 256}; //the upper boundary is exclusive
@@ -44,7 +77,7 @@ void SaveHistogram(cv::Mat& image, cv::ColorConversionCodes color_space, int cha
     cv::Mat luminosity_hist;
 
     if (cv::COLOR_RGB2RGBA == color_space) {
-        calcHist(&channels[channel], 1, 0, cv::Mat(), luminosity_hist, 1, &hist_size, &hist_range, uniform, accumulate );
+        calcHist(&image, 1, rgb_channels, cv::Mat(), luminosity_hist, 1, &hist_size, &hist_range, uniform, accumulate );
         //calcHist(&channels[0], 1, 0, cv::Mat(), luminosity_hist, 1, &hist_size, &hist_range, uniform, accumulate );
         //calcHist(&channels[1], 1, 0, cv::Mat(), luminosity_hist, 1, &hist_size, &hist_range, uniform, accumulate );
         //calcHist(&channels[2], 1, 0, cv::Mat(), luminosity_hist, 1, &hist_size, &hist_range, uniform, accumulate );
@@ -71,14 +104,14 @@ void SaveHistogram(cv::Mat& image, cv::ColorConversionCodes color_space, int cha
     for( int i = 1; i < hist_size; i++ ) {
         line(hist_image, cv::Point(bin_w * (i - 1), hist_h - cvRound(luminosity_hist.at<float>(i - 1)) ),
              cv::Point( bin_w*(i), hist_h - cvRound(luminosity_hist.at<float>(i)) ),
-             cv::Scalar( 255, 0, 0), 2, 8, 0  );
+             cv::Scalar( 0, 0, 255), 2, 8, 0  );
     }
 
     std::string file_name = image_name + ".jpg";
-    if (!cv::imread(file_name, cv::IMREAD_ANYCOLOR).empty()) {
+    if (!cv::imread(file_name, cv::IMREAD_UNCHANGED).empty()) {
         std::remove(file_name.c_str());
     }
-    cv::imwrite("images/" + image_name + ".jpg", hist_image);
+    cv::imwrite("images/dump/" + image_name + ".jpg", hist_image);
 
     if (show_histogram) {
         if (hist_image.empty()) {
@@ -91,23 +124,40 @@ void SaveHistogram(cv::Mat& image, cv::ColorConversionCodes color_space, int cha
     }
 }
 
-double CalculateMeanBrightness(cv::Mat& image, cv::ColorConversionCodes color_space, int channel, const int roi_width, const int roi_height, const int x0, const int y0) {
+void CalculateMeanBrightness(cv::Mat& img, cv::ColorConversionCodes color_space, int channel, const std::vector<int>& roi_arguments, double& mean_brightness, double& duration_ms) {
+    if (img.empty()) {
+        std::cerr << "SaveHistogram(): Image not found!" << std::endl;
+        return;
+    }
+
+    //cv::Mat image;
+    //img.copyTo(image);
+
     double current_value = 0.0;
     double sum = 0.0;
-    double mean_brightness = 0.0;
+    mean_brightness = 0.0;
 
-    int rows = image.rows;
-    int columns = image.cols;
+    // ROI arguments
+    int width = roi_arguments.at(0);
+    int height = roi_arguments.at(1);
+    int x0 = roi_arguments.at(2);
+    int y0 = roi_arguments.at(3);
+
+    cv::Mat roi_image;
+    img(cv::Rect(x0, y0, width, height)).copyTo(roi_image);
+
+    int rows = roi_image.rows;
+    int columns = roi_image.cols;
 
     for (int r = 0; r < rows; r++) {
         for (int c = 0; c < columns; c++) {
             if (cv::COLOR_RGB2RGBA == color_space) {
-                current_value = 0.2126 * image.at<cv::Vec3b>(r, c)[0];
-                current_value += 0.7152 * image.at<cv::Vec3b>(r, c)[1];
-                current_value += 0.0722 * image.at<cv::Vec3b>(r, c)[2];
+                current_value = 0.2126 * roi_image.at<cv::Vec3b>(r, c)[0];
+                current_value += 0.7152 * roi_image.at<cv::Vec3b>(r, c)[1];
+                current_value += 0.0722 * roi_image.at<cv::Vec3b>(r, c)[2];
                 sum += current_value;
             } else {
-                current_value = image.at<cv::Vec3b>(r, c)[channel];
+                current_value = roi_image.at<cv::Vec3b>(r, c)[channel];
                 sum += current_value;
             }
         }
@@ -115,16 +165,65 @@ double CalculateMeanBrightness(cv::Mat& image, cv::ColorConversionCodes color_sp
 
     mean_brightness = sum / (rows * columns);
 
-    return mean_brightness;
+    /*if (cv::COLOR_RGB2RGBA == color_space) {
+        std::cout << "RGB Mean brightness: " << mean_brightness << std::endl;
+        std::cout << "RGB Duration: " << " " << duration_ms << " ms" << std::endl;
+    } else if (cv::COLOR_RGB2HSV == color_space) {
+        std::cout << "HSV Mean brightness: " << mean_brightness << std::endl;
+        std::cout << "HSV Duration: " << duration_ms << " ms" <<  std::endl;
+    } else if (cv::COLOR_RGB2YUV == color_space) {
+        std::cout << "YUV Mean brightness: " << mean_brightness << std::endl;
+        std::cout << "YUV Duration: " << duration_ms << " ms" <<  std::endl;
+    } else if (cv::COLOR_RGB2YCrCb == color_space) {
+        std::cout << "YCrCb Mean brightness: " << mean_brightness << std::endl;
+        std::cout << "YCrCb Duration: " << duration_ms << " ms" <<  std::endl;
+    } else if (cv::COLOR_RGB2Lab == color_space) {
+        std::cout << "Lab Mean brightness: " << mean_brightness << std::endl;
+        std::cout << "Lab Duration: " << duration_ms << " ms" <<  std::endl;
+    } else if (cv::COLOR_RGB2Luv == color_space) {
+        std::cout << "Luv Mean brightness: " << mean_brightness << std::endl;
+        std::cout << "Luv Duration: " << duration_ms << " ms" <<  std::endl;
+    } else if (cv::COLOR_RGB2XYZ == color_space) {
+        std::cout << "XYZ Mean brightness: " << mean_brightness << std::endl;
+        std::cout << "XYZ Duration: " << duration_ms << " ms" <<  std::endl;
+    }*/
 }
 
-void ConvertImage(cv::Mat& image, cv::ColorConversionCodes new_color_space) {
-    if (cv::COLOR_RGB2RGBA == new_color_space) {
+void ConvertImage(cv::Mat& img, cv::ColorConversionCodes new_color_space) {
+    cv::cvtColor(img, img, new_color_space);
+}
+
+void ReadRawImage(cv::Mat& img, const std::string& full_image_path, bool show_image) {
+    FILE *fp = nullptr;
+    errno_t err;
+    char *imagedata = nullptr;
+    int image_width = 1920;
+    int image_height = 1280;
+    int framesize = image_width * image_height;
+
+    if( 0 != (err = fopen_s(&fp, full_image_path.c_str(), "rb"))) {
+        std::cerr << "ERROR: " << err << ". Colud not open file!" << std::endl;
         return;
-    } else {
-        cv::cvtColor(image, image, new_color_space);
     }
 
+    imagedata = (char*) malloc (sizeof(uchar) * framesize * 2);
+    fread(imagedata, sizeof(char) * 2, framesize, fp);
+    img.create(image_height, image_width, CV_16U);
+    memcpy(img.data, imagedata, framesize * 2);
+    free(imagedata);
+    fclose(fp);
+
+    if (show_image) {
+        if (img.empty()) {
+            std::cerr << "ReadRawImage: Image not found!" << std::endl;
+            return;
+        }
+        cv::imshow("RAW Image", img);
+        cv::waitKey(0);
+    }
+
+    cv::cvtColor(img, img, cv::COLOR_BayerBG2RGB);
+    img.convertTo(img, CV_8U, 1 / 256.0);
 }
 
 
