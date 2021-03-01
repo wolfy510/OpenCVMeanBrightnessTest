@@ -22,8 +22,6 @@ void SaveImage(cv::Mat& img, cv::ColorConversionCodes color_space, int channel, 
     if (cv::COLOR_RGB2RGBA == color_space) {
         cv::Mat tmp_image;
         image.copyTo(tmp_image);
-        cv::cvtColor(tmp_image, tmp_image, cv::COLOR_RGB2GRAY);
-        cv::cvtColor(tmp_image, image, cv::COLOR_GRAY2RGB);
     } else {
         std::vector<cv::Mat> channels;
         split(image, channels);
@@ -40,7 +38,7 @@ void SaveImage(cv::Mat& img, cv::ColorConversionCodes color_space, int channel, 
     // Bottom right corner
     cv::Point pt2(x0 + width, y0 + height);
 
-    cv::rectangle(image, pt1, pt2, cv::Scalar(0, 0, 255));
+    cv::rectangle(image, pt1, pt2, cv::Scalar(0, 0, 255), 5);
 
     std::string file_name = image_name + ".jpg";
     if (!cv::imread(file_name, cv::IMREAD_UNCHANGED).empty()) {
@@ -71,8 +69,8 @@ void SaveHistogram(cv::Mat& img, cv::ColorConversionCodes color_space, int chann
     int rgb_channels[] = {0, 1, 2};
     split(image, channels);
     int hist_size = 256;
-    float range[] = {0, 256}; //the upper boundary is exclusive
-    const float *hist_range = {range};
+    float range[] = {0, 256}; // The upper boundary is exclusive
+    const float* hist_range = {range};
     bool uniform = true, accumulate = false;
     cv::Mat luminosity_hist;
 
@@ -124,7 +122,7 @@ void SaveHistogram(cv::Mat& img, cv::ColorConversionCodes color_space, int chann
     }
 }
 
-void CalculateMeanBrightness(cv::Mat& img, cv::ColorConversionCodes color_space, int channel, const std::vector<int>& roi_arguments, double& mean_brightness, double& duration_ms) {
+void CalculateMeanBrightness(cv::Mat& img, cv::ColorConversionCodes color_space, int channel, const std::vector<int>& roi_arguments, double& mean_brightness) {
     if (img.empty()) {
         std::cerr << "SaveHistogram(): Image not found!" << std::endl;
         return;
@@ -164,29 +162,6 @@ void CalculateMeanBrightness(cv::Mat& img, cv::ColorConversionCodes color_space,
     }
 
     mean_brightness = sum / (rows * columns);
-
-    /*if (cv::COLOR_RGB2RGBA == color_space) {
-        std::cout << "RGB Mean brightness: " << mean_brightness << std::endl;
-        std::cout << "RGB Duration: " << " " << duration_ms << " ms" << std::endl;
-    } else if (cv::COLOR_RGB2HSV == color_space) {
-        std::cout << "HSV Mean brightness: " << mean_brightness << std::endl;
-        std::cout << "HSV Duration: " << duration_ms << " ms" <<  std::endl;
-    } else if (cv::COLOR_RGB2YUV == color_space) {
-        std::cout << "YUV Mean brightness: " << mean_brightness << std::endl;
-        std::cout << "YUV Duration: " << duration_ms << " ms" <<  std::endl;
-    } else if (cv::COLOR_RGB2YCrCb == color_space) {
-        std::cout << "YCrCb Mean brightness: " << mean_brightness << std::endl;
-        std::cout << "YCrCb Duration: " << duration_ms << " ms" <<  std::endl;
-    } else if (cv::COLOR_RGB2Lab == color_space) {
-        std::cout << "Lab Mean brightness: " << mean_brightness << std::endl;
-        std::cout << "Lab Duration: " << duration_ms << " ms" <<  std::endl;
-    } else if (cv::COLOR_RGB2Luv == color_space) {
-        std::cout << "Luv Mean brightness: " << mean_brightness << std::endl;
-        std::cout << "Luv Duration: " << duration_ms << " ms" <<  std::endl;
-    } else if (cv::COLOR_RGB2XYZ == color_space) {
-        std::cout << "XYZ Mean brightness: " << mean_brightness << std::endl;
-        std::cout << "XYZ Duration: " << duration_ms << " ms" <<  std::endl;
-    }*/
 }
 
 void ConvertImage(cv::Mat& img, cv::ColorConversionCodes new_color_space) {
@@ -226,6 +201,14 @@ void ReadRawImage(cv::Mat& img, const std::string& full_image_path, bool show_im
     img.convertTo(img, CV_8U, 1 / 256.0);
 }
 
-
+void PrintResults(const std::vector<double>& brightness_sum_list, const std::vector<double>& duration_sum_ms_list, const int& measures) {
+    std::cout << "RGB:\t " << brightness_sum_list.at(0) / measures << ", " << duration_sum_ms_list.at(0) / measures << " ms" << std::endl;
+    std::cout << "HSV:\t " << brightness_sum_list.at(1) / measures << ", " << duration_sum_ms_list.at(1) / measures << " ms" << std::endl;
+    std::cout << "YUV:\t " << brightness_sum_list.at(2) / measures << ", " << duration_sum_ms_list.at(2) / measures << " ms" << std::endl;
+    std::cout << "YCrCb:\t " << brightness_sum_list.at(3) / measures << ", " << duration_sum_ms_list.at(3) / measures << " ms" << std::endl;
+    std::cout << "Lab:\t " << brightness_sum_list.at(4) / measures << ", " << duration_sum_ms_list.at(4) / measures << " ms" << std::endl;
+    std::cout << "Luv:\t " << brightness_sum_list.at(5) / measures << ", " << duration_sum_ms_list.at(5) / measures << " ms" << std::endl;
+    std::cout << "XYZ:\t " << brightness_sum_list.at(6) / measures << ", " << duration_sum_ms_list.at(6) / measures << " ms" << std::endl;
+}
 
 #endif //OPENCVMEANBRIGHTNESSTEST_HELPERFUNCTIONS_H
