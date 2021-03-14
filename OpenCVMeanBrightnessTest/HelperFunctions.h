@@ -20,13 +20,14 @@ void SaveImage(cv::Mat& img, cv::ColorConversionCodes color_space, int channel, 
     img.copyTo(image);
 
     if (cv::COLOR_RGB2RGBA == color_space) {
-        cv::Mat tmp_image;
-        image.copyTo(tmp_image);
+        //cv::Mat tmp_image;
+        //image.copyTo(tmp_image);
     } else {
         std::vector<cv::Mat> channels;
         split(image, channels);
         cv::cvtColor(channels[channel], image, cv::COLOR_GRAY2RGB);
     }
+
     // ROI arguments
     int width = roi_arguments.at(0);
     int height = roi_arguments.at(1);
@@ -38,14 +39,21 @@ void SaveImage(cv::Mat& img, cv::ColorConversionCodes color_space, int channel, 
     // Bottom right corner
     cv::Point pt2(x0 + width, y0 + height);
 
+    // Top left corner
+    //cv::Point pt3(210, 10);
+    // Bottom right corner
+    //cv::Point pt4(1610, 910);
+
+
+    //cv::rectangle(image, pt3, pt4, cv::Scalar(255, 0, 0), 5);
     cv::rectangle(image, pt1, pt2, cv::Scalar(0, 0, 255), 5);
 
-    std::string file_name = image_name + ".jpg";
+    std::string file_name = image_name + ".png";
     if (!cv::imread(file_name, cv::IMREAD_UNCHANGED).empty()) {
         std::remove(file_name.c_str());
     }
 
-    cv::imwrite("images/dump/" + image_name + ".jpg", image);
+    cv::imwrite("images/dump/" + image_name + ".png", image);
     if (show_image) {
         if (image.empty()) {
             std::cerr << "SaveImage: Image not found!" << std::endl;
@@ -166,6 +174,7 @@ void CalculateMeanBrightness(cv::Mat& img, cv::ColorConversionCodes color_space,
 
 void ConvertImage(cv::Mat& img, cv::ColorConversionCodes new_color_space) {
     cv::cvtColor(img, img, new_color_space);
+
 }
 
 void ReadRawImage(cv::Mat& img, const std::string& full_image_path, bool show_image) {
