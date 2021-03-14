@@ -4,23 +4,23 @@
 
 
 int main() {
-    std::string image_path = "images/road_image";
-    std::string input_format = ".raw";
+    std::string image_path = "images/road_image13";
+    std::string input_format = ".jpg";
     std::string full_image_path = image_path + input_format;
 
     bool show_raw_image = false;
     bool show_all_images = false;
     bool show_all_histograms = false;
-    bool save_images_and_histograms = true;
+    bool save_images_and_histograms = false;
     bool measure_only_step_4 = false;
-    int measures = 1;
+    int measures = 1000;
 
     cv::Mat converted_image;
     std::vector<std::string> color_space_strings = {"RGB", "HSV", "YUV", "YCrCb", "Lab", "Luv", "XYZ"};
     std::vector<cv::ColorConversionCodes> image_formats = {cv::COLOR_RGB2RGBA, cv::COLOR_RGB2HSV, cv::COLOR_RGB2YUV, cv::COLOR_RGB2YCrCb, cv::COLOR_RGB2Lab, cv::COLOR_RGB2Luv, cv::COLOR_RGB2XYZ};
     std::vector<int>channels                            = {                 0,                 2,                 0,                   0,                 0,                 0,                 1};
     //                               width,    height,      x0,        y0
-    std::vector<int> roi_arguments = {1400,       200,     210,        600};
+    std::vector<int> roi_arguments = {1100,       200,     310,        600};
 
     // Step 1 - read image
     cv::Mat image;

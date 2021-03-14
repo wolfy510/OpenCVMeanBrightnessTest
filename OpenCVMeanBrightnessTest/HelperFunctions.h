@@ -40,12 +40,12 @@ void SaveImage(cv::Mat& img, cv::ColorConversionCodes color_space, int channel, 
     cv::Point pt2(x0 + width, y0 + height);
 
     // Top left corner
-    //cv::Point pt3(210, 10);
+    cv::Point pt3(210, 10);
     // Bottom right corner
-    //cv::Point pt4(1610, 910);
+    cv::Point pt4(1610, 910);
 
 
-    //cv::rectangle(image, pt3, pt4, cv::Scalar(255, 0, 0), 5);
+    cv::rectangle(image, pt3, pt4, cv::Scalar(255, 0, 0), 5);
     cv::rectangle(image, pt1, pt2, cv::Scalar(0, 0, 255), 5);
 
     std::string file_name = image_name + ".png";
