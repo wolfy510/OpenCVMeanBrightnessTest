@@ -4,8 +4,8 @@
 
 
 int main() {
-    std::string image_path = "images/road_image13";
-    std::string input_format = ".jpg";
+    std::string image_path = "images/road_image";
+    std::string input_format = ".raw";
     std::string full_image_path = image_path + input_format;
 
     bool show_raw_image = false;
