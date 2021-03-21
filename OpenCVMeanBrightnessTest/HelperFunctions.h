@@ -19,10 +19,7 @@ void SaveImage(cv::Mat& img, cv::ColorConversionCodes color_space, int channel, 
     cv::Mat image;
     img.copyTo(image);
 
-    if (cv::COLOR_RGB2RGBA == color_space) {
-        //cv::Mat tmp_image;
-        //image.copyTo(tmp_image);
-    } else {
+    if (cv::COLOR_RGB2RGBA != color_space) {
         std::vector<cv::Mat> channels;
         split(image, channels);
         cv::cvtColor(channels[channel], image, cv::COLOR_GRAY2RGB);
@@ -99,6 +96,8 @@ void SaveHistogram(cv::Mat& img, cv::ColorConversionCodes color_space, int chann
         calcHist(&channels[channel], 1, 0, cv::Mat(), luminosity_hist, 1, &hist_size, &hist_range, uniform, accumulate );
     } else if (cv::COLOR_RGB2XYZ == color_space) {
         calcHist(&channels[channel], 1, 0, cv::Mat(), luminosity_hist, 1, &hist_size, &hist_range, uniform, accumulate );
+    } else if (cv::COLOR_RGB2GRAY == color_space) {
+        calcHist(&channels[channel], 1, 0, cv::Mat(), luminosity_hist, 1, &hist_size, &hist_range, uniform, accumulate );
     }
 
     int hist_w = 512, hist_h = 400;
@@ -163,8 +162,13 @@ void CalculateMeanBrightness(cv::Mat& img, cv::ColorConversionCodes color_space,
                 current_value += 0.0722 * roi_image.at<cv::Vec3b>(r, c)[2];
                 sum += current_value;
             } else {
-                current_value = roi_image.at<cv::Vec3b>(r, c)[channel];
-                sum += current_value;
+                if (cv::COLOR_RGB2GRAY == color_space) {
+                    current_value = roi_image.at<uchar>(r, c);
+                    sum += current_value;
+                } else {
+                    current_value = roi_image.at<cv::Vec3b>(r, c)[channel];
+                    sum += current_value;
+                }
             }
         }
     }
@@ -218,6 +222,7 @@ void PrintResults(const std::vector<double>& brightness_sum_list, const std::vec
     std::cout << "Lab:\t " << brightness_sum_list.at(4) / measures << ", " << duration_sum_ms_list.at(4) / measures << " ms" << std::endl;
     std::cout << "Luv:\t " << brightness_sum_list.at(5) / measures << ", " << duration_sum_ms_list.at(5) / measures << " ms" << std::endl;
     std::cout << "XYZ:\t " << brightness_sum_list.at(6) / measures << ", " << duration_sum_ms_list.at(6) / measures << " ms" << std::endl;
+    std::cout << "GS:\t " << brightness_sum_list.at(7) / measures << ", " << duration_sum_ms_list.at(7) / measures << " ms" << std::endl;
 }
 
 #endif //OPENCVMEANBRIGHTNESSTEST_HELPERFUNCTIONS_H

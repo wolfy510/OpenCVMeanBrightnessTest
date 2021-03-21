@@ -16,12 +16,13 @@ int main() {
     int measures = 1000;
 
     cv::Mat converted_image;
-    std::vector<std::string> color_space_strings = {"RGB", "HSV", "YUV", "YCrCb", "Lab", "Luv", "XYZ"};
-    std::vector<cv::ColorConversionCodes> image_formats = {cv::COLOR_RGB2RGBA, cv::COLOR_RGB2HSV, cv::COLOR_RGB2YUV, cv::COLOR_RGB2YCrCb, cv::COLOR_RGB2Lab, cv::COLOR_RGB2Luv, cv::COLOR_RGB2XYZ};
-    std::vector<int>channels                            = {                 0,                 2,                 0,                   0,                 0,                 0,                 1};
+    std::vector<std::string> color_space_strings = {"RGB", "HSV", "YUV", "YCrCb", "Lab", "Luv", "XYZ", "GS"};
+    std::vector<cv::ColorConversionCodes> image_formats = {cv::COLOR_RGB2RGBA, cv::COLOR_RGB2HSV, cv::COLOR_RGB2YUV, cv::COLOR_RGB2YCrCb, cv::COLOR_RGB2Lab, cv::COLOR_RGB2Luv, cv::COLOR_RGB2XYZ, cv::COLOR_RGB2GRAY};
+    std::vector<int>channels                            = {                 0,                 2,                 0,                   0,                 0,                 0,                 1,                  0};
     //                               width,    height,      x0,        y0
+    //                         ROI:   1100,       200,     310,        600
+    //               Effective FOV:   1400,       900,     210,        10
     std::vector<int> roi_arguments = {1100,       200,     310,        600};
-
     // Step 1 - read image
     cv::Mat image;
     if (".raw" == input_format) {
@@ -31,8 +32,8 @@ int main() {
     }
     double tmp_brightness = 0.0;
 
-    std::vector<double> brightness_sum_list = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-    std::vector<double> duration_sum_ms_list = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    std::vector<double> brightness_sum_list = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    std::vector<double> duration_sum_ms_list = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
     for (int i = 0; i < measures; i++) {
         if (i % 10 == 0) {
